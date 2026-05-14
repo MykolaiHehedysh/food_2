@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Rezepte Finder</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+    }
+    .recipe {
+      background: white;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    img {
+      max-width: 200px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Was kann ich kochen?</h2>
+
+<input type="text" id="ingredients" placeholder="Zutaten eingeben (ukr/de), z.B. молоко, яйця, борошно">
+<button onclick="findRecipes()">Rezepte finden</button>
+
+<div id="recipes"></div>
+
+<script>
+  // Wörterbuch: Ukrainisch → Englisch
+const ukToEn = {
+  "молоко": "milk",
+  "яйце": "egg",
+  "яйця": "eggs",
+  "борошно": "flour",
+  "масло": "butter",
+  "сир": "cheese",
+  "картопля": "potato",
+  "цибуля": "onion",
+  "морква": "carrot",
+  "курка": "chicken",
+  "курятина": "chicken",
+  "рис": "rice",
+  "хліб": "bread",
+  "помідор": "tomato",
+  "помідори": "tomatoes",
+  "огірок": "cucumber",
+  "огірки": "cucumbers",
+  "олія": "oil",
+  "оливкова олія": "olive oil",
+  "сіль": "salt",
+  "цукор": "sugar",
+  "перець": "pepper",
+  "яловичина": "beef",
+  "свинина": "pork",
+  "риба": "fish",
+  "лосось": "salmon",
+  "тунець": "tuna",
+  "макарони": "pasta",
+  "вершки": "cream",
+  "йогурт": "yogurt",
+  "банан": "banana",
+  "яблуко": "apple"
+};
+
+// Übersetzung
+function translateIngredients(text) {
+  return text
+    .split(",")
+    .map(i => i.trim().toLowerCase())
+    .map(i => ukToEn[i] || i)
+    .join(",");
+}
+async function findRecipes() {
+  //----------------------
+  const ingredientsRaw = document.getElementById("ingredients").value.trim();  // von da liest API data ab
+  //----------------------
+  if (!ingredientsRaw) return;
+
+  const ingredients = translateIngredients(ingredientsRaw);
+
+  //------------------------------------------------
+  const apiKey = "9c497cdfb71a42fb9bda44c8d7cccbb7";
+
+  const url = `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${encodeURIComponent(ingredients)}&number=6&apiKey=${apiKey}`;
+  //------------------------------------------------
+  try {
+    const res = await fetch(url);
+    const recipes = await res.json();
+
+    const recipesDiv = document.getElementById("recipes");
+    recipesDiv.innerHTML = "";
+
+    recipes.forEach(recipe => {
+      const recipeEl = document.createElement("div");
+      recipeEl.className = "recipe";
+
+      recipeEl.innerHTML = `
+        <h3>${recipe.title}</h3>
+        <img src="${recipe.image}">
+        <p><b>Використані інгредієнти:</b> ${recipe.usedIngredientCount}</p>
+        <p><b>Бракує інгредієнтів:</b> ${recipe.missedIngredientCount}</p>
+        <button onclick="showRecipe(${recipe.id})">Показати рецепт</button>
+      `;
+
+      recipesDiv.appendChild(recipeEl);
+    });
+
+  } catch (err) {
+    alert("Помилка при отриманні рецептів");
+  }
+}
+
+
+// Rezeptdetails
+async function showRecipe(id) {
+  const apiKey = "9c497cdfb71a42fb9bda44c8d7cccbb7";
+  const url = `https://api.spoonacular.com/recipes/${id}/information?apiKey=${apiKey}`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    const instructions = data.instructions
+      ? data.instructions.replace(/<[^>]*>?/gm, "")
+      : "Немає доступної інструкції.";
+
+    alert("🍽️ " + data.title + "\n\n" + instructions);
+
+  } catch (err) {
+    alert("Помилка при отриманні рецепта");
+  }
+}
+
+</script>
+</body>
+</html>
+
+
